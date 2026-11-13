@@ -1,0 +1,41 @@
+name: Build Anjis Saturator
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+      - name: Build
+        run: cmake --build build --config Release --target AnjisSaturator_VST3 AnjisSaturator_Standalone --parallel
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnjisSaturator-Windows
+          path: |
+            build/AnjisSaturator_artefacts/Release/VST3/
+            build/AnjisSaturator_artefacts/Release/Standalone/
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -G Xcode -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+      - name: Build
+        run: cmake --build build --config Release --target AnjisSaturator_VST3 AnjisSaturator_AU AnjisSaturator_Standalone
+      - name: Zip
+        run: |
+          cd build/AnjisSaturator_artefacts/Release
+          ditto -c -k --keepParent VST3 ../../../AnjisSaturator-VST3-mac.zip
+          ditto -c -k --keepParent AU ../../../AnjisSaturator-AU-mac.zip
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnjisSaturator-macOS
+          path: build/*.zip
